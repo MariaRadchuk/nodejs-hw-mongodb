@@ -6,7 +6,7 @@ import { getAllContacts, getContactById } from './services/contacts.js';
 import { env } from './utils/env.js';
 
 //Setting a port using an environment variable
-const PORT = Number(env('PORT', '3000'));
+const PORT = Number(env('PORT', '3005'));
 
 //Function for configuring the server
 export const setupServer = () => {
