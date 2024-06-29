@@ -1,13 +1,15 @@
 import { SORT_ORDER } from '../constants/index.js';
 
-export const parseSortOrder = (sortOrder) => {
-  const sortOrderArrParams = [SORT_ORDER.ASC, SORT_ORDER.DESC];
-  if (sortOrderArrParams.includes(sortOrder)) return sortOrder;
-  return SORT_ORDER.ASC;
+const parseSortOrder = (sortOrder) => {
+  const isKnownOrder = [SORT_ORDER.ASC, SORT_ORDER.DESC].includes(sortOrder);
+
+  if (isKnownOrder) return sortOrder;
+
+  return SORT_ORDER.ASC; //default value
 };
 
-export const parseSortBy = (sortBy) => {
-  const sortByArr = [
+const parseSortBy = (sortBy) => {
+  const keysOfContact = [
     '_id',
     'name',
     'phoneNumber',
@@ -17,12 +19,15 @@ export const parseSortBy = (sortBy) => {
     'createdAt',
     'updatedAt',
   ];
-  if (sortByArr.includes(sortBy)) return sortBy;
-  return '_id';
+
+  if (keysOfContact.includes(sortBy)) return sortBy;
+
+  return 'name';
 };
 
 export const parseSortParams = (query) => {
-  const { sortBy, sortOrder } = query;
+  const { sortOrder, sortBy } = query;
+
   const parsedSortOrder = parseSortOrder(sortOrder);
   const parsedSortBy = parseSortBy(sortBy);
 
