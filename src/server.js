@@ -2,13 +2,17 @@ import express from 'express';
 import pino from 'pino-http';
 import cors from 'cors';
 
-import contactsRouter from './routes/contacts.js'; // import routers
+// import contactsRouter from './routes/contacts.js'; // import routers // During authentication we do not need this import
+
+//instead of import contactsRouter we should import:
+import router from './routers/index.js';
 
 import { env } from './utils/env.js';
 
 //Import of middlewares
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
+import cookieParser from 'cookie-parser';
 
 //Setting a port using an environment variable
 const PORT = Number(env('PORT', '3000'));
@@ -23,6 +27,9 @@ export const setupServer = () => {
   // Middleware for handling CORS requests
   app.use(cors());
 
+  //cookie
+  app.use(cookieParser());
+
   // Logging with pino
   app.use(
     pino({
@@ -32,8 +39,11 @@ export const setupServer = () => {
     }),
   );
 
-  //Route to get all contacts and get a contact by ID
-  app.use(contactsRouter);
+  //Route to get all contacts and get a contact by ID //During authentication we don't need this code
+  // app.use(contactsRouter);
+
+  //instead of it we should use
+  app.use(router);
 
   // Handling invalid routes
   app.use('*', notFoundHandler);
