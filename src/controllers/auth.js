@@ -1,78 +1,76 @@
-import { SORT_ORDER } from '../constants/index.js';
-import { ContactsCollection } from '../db/models/contact.js';
-import { calculatePaginationData } from '../utils/calculatePaginationData.js';
+import { ONE_DAY } from '../constants/index.js';
+import {
+  loginUser,
+  logoutUser,
+  refreshUsersSession,
+  registerUser,
+} from '../services/auth.js';
 
-// Added logic to the service for correct requests to the database
-export const getAllContacts = async ({
-  page = 1,
-  perPage = 10,
-  sortBy = 'name',
-  sortOrder = SORT_ORDER.ASC,
-  filter = {},
-  userId,
-}) => {
-  const limit = perPage;
-  const skip = (page - 1) * perPage;
+export const registerUserController = async (req, res) => {
+  const user = await registerUser(req.body);
 
-  const contactsQuery = ContactsCollection.find({ userId });
-
-  if (filter.contactType) {
-    contactsQuery.where('contactType').equals(filter.contactType);
-  }
-  if (filter.isFavourite) {
-    contactsQuery.where('isFavourite').equals(filter.isFavourite);
-  }
-
-  const [contactsCount, contacts] = await Promise.all([
-    ContactsCollection.find().merge(contactsQuery).countDocuments(),
-    contactsQuery
-      .limit(limit)
-      .skip(skip)
-      .sort({ [sortBy]: sortOrder })
-      .exec(),
-  ]);
-
-  const paginationData = calculatePaginationData(contactsCount, perPage, page);
-
-  return {
-    contacts,
-    ...paginationData, // Used the spread operator to get all properties from the object paginationData;
-  };
-};
-
-export const getContactById = async (contactId, userId) => {
-  const contact = await ContactsCollection.findOne({ _id: contactId, userId });
-  return contact;
-};
-
-export const createContact = async (payload) => {
-  const contact = await ContactsCollection.create(payload);
-  return contact;
-};
-
-export const updateContact = async (contactId, userId, payload, options = {}) => {
-  const rawResult = await ContactsCollection.findOneAndUpdate(
-    { _id: contactId, userId },
-    payload,
-    {
-      new: true,
-      includeResultMetadata: true,
-      ...options,
-    },
-  );
-
-  if (!rawResult || !rawResult.value) return null;
-
-  return {
-    contact: rawResult.value,
-    isNew: Boolean(rawResult?.lastErrorObject?.upserted),
-  };
-};
-
-export const deleteContact = async (contactId, userId) => {
-  const contact = await ContactsCollection.findOneAndDelete({
-    _id: contactId,
-    userId,
+  res.status(201).json({
+    status: 201,
+    message: 'Successfully registered a user!',
+    data: user,
   });
-  return contact;
+};
+
+export const loginUserController = async (req, res) => {
+  const session = await loginUser(req.body);
+  res.cookie('refreshToken', session.refreshToken, {
+    httpOnly: true,
+    expires: new Date(Date.now() + ONE_DAY),
+  });
+  res.cookie('sessionId', session._id, {
+    httpOnly: true,
+    expires: new Date(Date.now() + ONE_DAY),
+  });
+
+  res.status(200).json({
+    status: 200,
+    message: 'Successfully logged in as a user!',
+    data: {
+      accessToken: session.accessToken,
+    },
+  });
+};
+
+const setupSession = (res, session) => {
+  res.cookie('refreshToken', session.refreshToken, {
+    httpOnly: true,
+    expires: new Date(Date.now() + ONE_DAY),
+  });
+  res.cookie('sessionId', session._id, {
+    httpOnly: true,
+    expires: new Date(Date.now() + ONE_DAY),
+  });
+};
+
+export const refreshUserSessionController = async (req, res) => {
+  const session = await refreshUsersSession({
+    sessionId: req.cookies.sessionId,
+    refreshToken: req.cookies.refreshToken,
+  });
+
+  setupSession(res, session);
+
+  res.status(200).json({
+    status: 200,
+    message: 'Successfully refreshed a session!',
+    data: {
+      accessToken: session.accessToken,
+    },
+  });
+};
+
+export const logoutUserController = async (req, res) => {
+  if (req.cookies.sessionId) {
+    await logoutUser(req.cookies.sessionId);
+  }
+
+  res.clearCookie('sessionId');
+  res.clearCookie('refreshToken');
+
+  res.status(204).send();
 };
