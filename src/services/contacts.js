@@ -2,7 +2,7 @@ import { SORT_ORDER } from '../constants/index.js';
 import { ContactsCollection } from '../db/models/contact.js';
 import { calculatePaginationData } from '../utils/calculatePaginationData.js';
 
-// Added logic to the service for correct requests to the database
+//Added logic to the service for correct requests to the database
 export const getAllContacts = async ({
   page = 1,
   perPage = 10,
@@ -23,6 +23,18 @@ export const getAllContacts = async ({
     contactsQuery.where('isFavourite').equals(filter.isFavourite);
   }
 
+  // Instead of this code
+  // const contactsCount = await ContactsCollection.find()
+  //   .merge(contactsQuery)
+  //   .countDocuments();
+
+  // const contacts = await contactsQuery
+  //   .skip(skip)
+  //   .limit(limit)
+  //   .sort({ [sortBy]: sortOrder })
+  //   .exec();
+
+  //We can write such code
   const [contactsCount, contacts] = await Promise.all([
     ContactsCollection.find().merge(contactsQuery).countDocuments(),
     contactsQuery
@@ -36,12 +48,12 @@ export const getAllContacts = async ({
 
   return {
     contacts,
-    ...paginationData, // Used the spread operator to get all properties from the object paginationData;
+    ...paginationData, //Used the spread operator to get all properties from the object paginationData;
   };
 };
 
 export const getContactById = async (contactId, userId) => {
-  const contact = await ContactsCollection.findOne({ _id: contactId, userId });
+  const contact = await ContactsCollection.findById({ _id: contactId, userId });
   return contact;
 };
 
@@ -50,7 +62,12 @@ export const createContact = async (payload) => {
   return contact;
 };
 
-export const updateContact = async (contactId, userId, payload, options = {}) => {
+export const updateContact = async (
+  contactId,
+  userId,
+  payload,
+  options = {},
+) => {
   const rawResult = await ContactsCollection.findOneAndUpdate(
     { _id: contactId, userId },
     payload,
