@@ -1,4 +1,3 @@
-//import function (createHttpError) from library
 import createHttpError from 'http-errors';
 import {
   createContact,
@@ -14,13 +13,10 @@ import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
 import { env } from '../utils/env.js';
 import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
 
-//Get all contacts CONTROLLER
 export const getContactsController = async (req, res) => {
-  const { page, perPage } = parsePaginationParams(req.query); //Added pagination to get query
-
-  const { sortBy, sortOrder } = parseSortParams(req.query); //Added sort to get query
-
-  const filter = parseFilterParams(req.query); //Added filter to get query
+  const { page, perPage } = parsePaginationParams(req.query);
+  const { sortBy, sortOrder } = parseSortParams(req.query);
+  const filter = parseFilterParams(req.query);
 
   const userId = req.user._id;
 
@@ -40,7 +36,6 @@ export const getContactsController = async (req, res) => {
   });
 };
 
-//Get a contact by ID CONTROLLER
 export const getContactByIdController = async (req, res, next) => {
   const { contactId } = req.params;
   const userId = req.user._id;
@@ -58,11 +53,9 @@ export const getContactByIdController = async (req, res, next) => {
   });
 };
 
-//Create Contact Controller
 export const createContactController = async (req, res) => {
   const data = { ...req.body, userId: req.user._id };
 
-  //Added photo to the contact
   const photo = req.file;
   if (photo) {
     data.photo = await saveFileToCloudinary(photo);
@@ -77,12 +70,9 @@ export const createContactController = async (req, res) => {
   });
 };
 
-//Partialy update a cotact (PATCH) Controller
 export const patchContactController = async (req, res, next) => {
   const { contactId } = req.params;
-
   const userId = req.user._id;
-
   const photo = req.file;
 
   let photoUrl;
@@ -107,22 +97,20 @@ export const patchContactController = async (req, res, next) => {
 
   res.status(200).json({
     status: 200,
-    message: `Successfully patched a contact!`,
+    message: 'Successfully patched a contact!',
     data: result.contact,
   });
 };
 
-//Delete a contact Controller
 export const deleteContactController = async (req, res, next) => {
   const { contactId } = req.params;
-
   const userId = req.user._id;
-
   const contact = await deleteContact(contactId, userId);
 
   if (!contact) {
     next(createHttpError(404, 'Contact not found'));
     return;
   }
+
   res.status(204).send();
 };
